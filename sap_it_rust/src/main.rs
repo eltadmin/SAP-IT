@@ -6,23 +6,30 @@
 mod config;
 mod connection;
 mod platform;
+mod tui;
 mod ui;
 
 use anyhow::{Context, Result};
 use clap::{Parser, Subcommand};
 use config::Config;
 use connection::{ConnectionManager, ConnectionType};
+use crossterm::{
+    execute,
+    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
+};
+use ratatui::prelude::*;
+use std::io::stdout;
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
-use tracing::{debug, error, info, Level};
+use tracing::{debug, info, Level};
 use tracing_subscriber::EnvFilter;
 
 /// SAP-IT Server Connection Manager
 #[derive(Parser, Debug)]
 #[command(name = "sap_it")]
 #[command(author = "SAP-IT Team")]
-#[command(version = "2.0.0")]
+#[command(version = "2.1.0")]
 #[command(about = "Server connection manager for IT infrastructure", long_about = None)]
 struct Cli {
     /// Path to the configuration file
@@ -32,6 +39,10 @@ struct Cli {
     /// Enable verbose output (can be repeated for more verbosity)
     #[arg(short, long, action = clap::ArgAction::Count)]
     verbose: u8,
+
+    /// Use simple text mode instead of TUI
+    #[arg(long)]
+    simple: bool,
 
     #[command(subcommand)]
     command: Option<Commands>,
@@ -70,8 +81,10 @@ fn main() {
 fn run() -> Result<()> {
     let cli = Cli::parse();
 
-    // Initialize logging based on verbosity
-    init_logging(cli.verbose);
+    // Initialize logging based on verbosity (only for non-TUI modes)
+    if cli.simple || cli.command.is_some() {
+        init_logging(cli.verbose);
+    }
 
     debug!("CLI arguments: {:?}", cli);
 
@@ -81,19 +94,23 @@ fn run() -> Result<()> {
             return init_config(&output);
         }
         Some(Commands::List) => {
-            let config = load_config(cli.config.as_ref())?;
+            let config = load_config(cli.config.as_ref(), true)?;
             return list_servers(&config);
         }
         Some(Commands::Connect {
             server,
             connection_type,
         }) => {
-            let config = load_config(cli.config.as_ref())?;
+            let config = load_config(cli.config.as_ref(), true)?;
             return direct_connect(&config, &server, &connection_type);
         }
         None => {
             // Interactive mode
-            return interactive_mode(cli.config.as_ref());
+            if cli.simple {
+                return simple_interactive_mode(cli.config.as_ref());
+            } else {
+                return tui_mode(cli.config.as_ref());
+            }
         }
     }
 }
@@ -107,8 +124,7 @@ fn init_logging(verbosity: u8) {
         _ => Level::TRACE,
     };
 
-    let filter = EnvFilter::from_default_env()
-        .add_directive(level.into());
+    let filter = EnvFilter::from_default_env().add_directive(level.into());
 
     tracing_subscriber::fmt()
         .with_env_filter(filter)
@@ -117,18 +133,20 @@ fn init_logging(verbosity: u8) {
 }
 
 /// Load configuration from file or use defaults.
-fn load_config(path: Option<&PathBuf>) -> Result<Config> {
+fn load_config(path: Option<&PathBuf>, show_warning: bool) -> Result<Config> {
     let config_path = path.cloned().unwrap_or_else(Config::default_path);
 
     if config_path.exists() {
         Config::load(&config_path)
     } else {
-        ui::warning(&format!(
-            "Config file not found at '{}', using built-in defaults",
-            config_path.display()
-        ));
-        ui::status("Run 'sap_it init' to create a configuration file");
-        println!();
+        if show_warning {
+            ui::warning(&format!(
+                "Config file not found at '{}', using built-in defaults",
+                config_path.display()
+            ));
+            ui::status("Run 'sap_it init' to create a configuration file");
+            println!();
+        }
         Ok(Config::default_config())
     }
 }
@@ -147,7 +165,10 @@ fn init_config(output: &PathBuf) -> Result<()> {
     std::fs::write(output, &sample)
         .with_context(|| format!("Failed to write config file: {}", output.display()))?;
 
-    ui::success(&format!("Configuration file created: {}", output.display()));
+    ui::success(&format!(
+        "Configuration file created: {}",
+        output.display()
+    ));
     println!();
     println!("Edit this file to configure your servers, then run 'sap_it' to connect.");
 
@@ -168,7 +189,12 @@ fn list_servers(config: &Config) -> Result<()> {
         };
 
         println!();
-        println!("  {}. {} ({})", i + 1, server.name.white().bold(), ssh_status);
+        println!(
+            "  {}. {} ({})",
+            i + 1,
+            server.name.white().bold(),
+            ssh_status
+        );
         println!("     VPN: {}", server.vpn);
         println!("     RDP: {}", server.rdp);
         if let Some(ssh) = server.ssh_string() {
@@ -185,7 +211,11 @@ fn direct_connect(config: &Config, server_ref: &str, conn_type_str: &str) -> Res
     // Find server by name or index
     let server_index = if let Ok(index) = server_ref.parse::<usize>() {
         if index < 1 || index > config.servers.len() {
-            anyhow::bail!("Server index {} out of range (1-{})", index, config.servers.len());
+            anyhow::bail!(
+                "Server index {} out of range (1-{})",
+                index,
+                config.servers.len()
+            );
         }
         index - 1
     } else {
@@ -201,13 +231,17 @@ fn direct_connect(config: &Config, server_ref: &str, conn_type_str: &str) -> Res
         "rdp" => ConnectionType::Rdp,
         "ssh" => ConnectionType::Ssh,
         "both" => ConnectionType::Both,
-        _ => anyhow::bail!("Invalid connection type: {}. Use 'rdp', 'ssh', or 'both'", conn_type_str),
+        _ => anyhow::bail!(
+            "Invalid connection type: {}. Use 'rdp', 'ssh', or 'both'",
+            conn_type_str
+        ),
     };
 
     let server = &config.servers[server_index];
 
     // Check if SSH is requested but not available
-    if (conn_type == ConnectionType::Ssh || conn_type == ConnectionType::Both) && !server.has_ssh() {
+    if (conn_type == ConnectionType::Ssh || conn_type == ConnectionType::Both) && !server.has_ssh()
+    {
         anyhow::bail!("SSH not available for server '{}'", server.name);
     }
 
@@ -218,11 +252,7 @@ fn direct_connect(config: &Config, server_ref: &str, conn_type_str: &str) -> Res
     ui::display_connection_info(server, conn_type);
 
     // Create connection manager and connect
-    let manager = ConnectionManager::new(
-        server.clone(),
-        config.settings.clone(),
-        shutdown_flag,
-    );
+    let manager = ConnectionManager::new(server.clone(), config.settings.clone(), shutdown_flag);
 
     manager.connect(conn_type)?;
 
@@ -230,9 +260,70 @@ fn direct_connect(config: &Config, server_ref: &str, conn_type_str: &str) -> Res
     Ok(())
 }
 
-/// Run in interactive mode with menus.
-fn interactive_mode(config_path: Option<&PathBuf>) -> Result<()> {
-    let config = load_config(config_path)?;
+/// Run the TUI mode.
+fn tui_mode(config_path: Option<&PathBuf>) -> Result<()> {
+    let config = load_config(config_path, false)?;
+
+    // Setup terminal
+    enable_raw_mode()?;
+    let mut stdout = stdout();
+    execute!(stdout, EnterAlternateScreen)?;
+    let backend = CrosstermBackend::new(stdout);
+    let mut terminal = Terminal::new(backend)?;
+
+    // Create app state
+    let mut app = tui::App::new(config);
+
+    // Event handler
+    let event_handler = tui::EventHandler::new(250); // 250ms tick rate
+
+    // Main loop
+    let result = run_tui_loop(&mut terminal, &mut app, &event_handler);
+
+    // Restore terminal
+    disable_raw_mode()?;
+    execute!(terminal.backend_mut(), LeaveAlternateScreen)?;
+    terminal.show_cursor()?;
+
+    result
+}
+
+/// Run the TUI event loop.
+fn run_tui_loop(
+    terminal: &mut Terminal<CrosstermBackend<std::io::Stdout>>,
+    app: &mut tui::App,
+    event_handler: &tui::EventHandler,
+) -> Result<()> {
+    while !app.should_quit {
+        // Render UI
+        terminal.draw(|frame| {
+            tui::ui::render(app, frame);
+        })?;
+
+        // Handle events
+        match event_handler.next()? {
+            tui::Event::Tick => {
+                // Update connection status on tick
+                app.update_connection();
+            }
+            tui::Event::Key(key) => {
+                tui::event::handle_key_event(app, key);
+            }
+            tui::Event::Resize(_, _) => {
+                // Terminal resize is handled automatically by ratatui
+            }
+            tui::Event::Mouse(_) => {
+                // Mouse events not used currently
+            }
+        }
+    }
+
+    Ok(())
+}
+
+/// Run in simple text interactive mode.
+fn simple_interactive_mode(config_path: Option<&PathBuf>) -> Result<()> {
+    let config = load_config(config_path, true)?;
 
     // Set up graceful shutdown
     let shutdown_flag = setup_shutdown_handler();
@@ -258,11 +349,7 @@ fn interactive_mode(config_path: Option<&PathBuf>) -> Result<()> {
     ui::display_connection_info(server, conn_type);
 
     // Create connection manager
-    let manager = ConnectionManager::new(
-        server.clone(),
-        config.settings.clone(),
-        shutdown_flag,
-    );
+    let manager = ConnectionManager::new(server.clone(), config.settings.clone(), shutdown_flag);
 
     // Connect
     ui::display_waiting("Establishing connection");
@@ -279,7 +366,6 @@ fn setup_shutdown_handler() -> Arc<AtomicBool> {
 
     ctrlc::set_handler(move || {
         info!("Shutdown signal received");
-        ui::warning("Shutting down gracefully...");
         flag_clone.store(true, Ordering::SeqCst);
     })
     .expect("Error setting Ctrl+C handler");
