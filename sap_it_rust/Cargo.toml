@@ -1,6 +1,6 @@
 [package]
 name = "sap_it"
-version = "2.0.0"
+version = "2.1.0"
 edition = "2021"
 authors = ["SAP-IT Team"]
 description = "Server connection manager for IT infrastructure"
@@ -30,6 +30,13 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 
 # Directory paths
 dirs = "5"
+
+# TUI Framework
+ratatui = "0.29"
+crossterm = "0.28"
+
+# Async runtime for TUI events
+tokio = { version = "1", features = ["rt", "sync", "time", "macros"] }
 
 [dev-dependencies]
 tempfile = "3"
