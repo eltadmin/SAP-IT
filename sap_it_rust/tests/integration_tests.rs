@@ -118,7 +118,10 @@ fn test_invalid_config_error() {
         .output()
         .expect("Failed to execute command");
 
-    assert!(!output.status.success(), "Should have failed with invalid config");
+    assert!(
+        !output.status.success(),
+        "Should have failed with invalid config"
+    );
 }
 
 /// Test connect with invalid server name.
@@ -140,14 +143,7 @@ fn test_connect_invalid_server() {
 #[test]
 fn test_connect_invalid_type() {
     let output = Command::new("cargo")
-        .args([
-            "run",
-            "--",
-            "connect",
-            "1",
-            "--connection-type",
-            "invalid",
-        ])
+        .args(["run", "--", "connect", "1", "--connection-type", "invalid"])
         .current_dir(env!("CARGO_MANIFEST_DIR"))
         .output()
         .expect("Failed to execute command");

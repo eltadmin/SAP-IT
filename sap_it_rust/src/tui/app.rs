@@ -182,7 +182,11 @@ impl App {
     pub fn available_connection_types(&self) -> Vec<ConnectionType> {
         if let Some(server) = self.current_server() {
             if server.has_ssh() {
-                vec![ConnectionType::Rdp, ConnectionType::Ssh, ConnectionType::Both]
+                vec![
+                    ConnectionType::Rdp,
+                    ConnectionType::Ssh,
+                    ConnectionType::Both,
+                ]
             } else {
                 vec![ConnectionType::Rdp]
             }
@@ -385,11 +389,11 @@ impl App {
                         self.log_status("VPN connected, starting session...");
                     } else if let Some(start) = self.connection_start {
                         // Check for timeout
-                        if start.elapsed() > Duration::from_secs(self.config.settings.vpn_timeout_secs)
+                        if start.elapsed()
+                            > Duration::from_secs(self.config.settings.vpn_timeout_secs)
                         {
-                            self.connection_status = ConnectionStatus::Error(
-                                "VPN connection timeout".to_string(),
-                            );
+                            self.connection_status =
+                                ConnectionStatus::Error("VPN connection timeout".to_string());
                             self.log_status("VPN connection timed out");
                         }
                     }

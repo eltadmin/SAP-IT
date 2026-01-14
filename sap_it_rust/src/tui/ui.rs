@@ -171,10 +171,7 @@ fn render_server_details(app: &App, frame: &mut Frame, area: Rect) {
             Row::new(vec!["Name:", &server.name]),
             Row::new(vec!["VPN:", &server.vpn]),
             Row::new(vec!["RDP:", &server.rdp]),
-            Row::new(vec![
-                "SSH:",
-                server.ssh_string().unwrap_or("Not available"),
-            ]),
+            Row::new(vec!["SSH:", server.ssh_string().unwrap_or("Not available")]),
         ];
 
         let widths = [Constraint::Length(6), Constraint::Min(10)];
@@ -408,7 +405,11 @@ fn render_edit_server(app: &App, frame: &mut Frame, area: Rect) {
             &app.edit_server_fields.ssh,
             "user@host format",
         ),
-        ("VPN Name", &app.edit_server_fields.vpn, "As configured in OS"),
+        (
+            "VPN Name",
+            &app.edit_server_fields.vpn,
+            "As configured in OS",
+        ),
     ];
 
     let mut lines = vec![Line::from("")];
@@ -434,9 +435,10 @@ fn render_edit_server(app: &App, frame: &mut Frame, area: Rect) {
             Style::default().fg(Color::White)
         };
 
-        lines.push(Line::from(vec![
-            Span::styled(format!(" {}: ", label), label_style),
-        ]));
+        lines.push(Line::from(vec![Span::styled(
+            format!(" {}: ", label),
+            label_style,
+        )]));
 
         let cursor_indicator = if is_selected { "│" } else { "" };
         lines.push(Line::from(vec![
