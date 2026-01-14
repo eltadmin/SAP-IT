@@ -1,12 +1,38 @@
 [package]
 name = "sap_it"
-version = "1.0.0"
+version = "2.0.0"
 edition = "2021"
 authors = ["SAP-IT Team"]
 description = "Server connection manager for IT infrastructure"
+license = "MIT"
+readme = "README.md"
 
 [dependencies]
+# Terminal colors and styling
 colored = "2"
+
+# Serialization for config files
+serde = { version = "1", features = ["derive"] }
+toml = "0.8"
+
+# Error handling
+anyhow = "1"
+
+# Graceful shutdown
+ctrlc = "3"
+
+# CLI argument parsing
+clap = { version = "4", features = ["derive"] }
+
+# Logging
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# Directory paths
+dirs = "5"
+
+[dev-dependencies]
+tempfile = "3"
 
 [profile.release]
 opt-level = "z"
