@@ -71,7 +71,5 @@ pub fn start_ssh(target: &str) -> Result<()> {
 
 /// Clear the terminal screen.
 pub fn clear_screen() {
-    let _ = Command::new("cmd")
-        .args(["/c", "cls"])
-        .status();
+    let _ = Command::new("cmd").args(["/c", "cls"]).status();
 }

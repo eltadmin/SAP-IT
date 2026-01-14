@@ -71,11 +71,7 @@ pub fn ping_host(host: &str, timeout_ms: u32) -> bool {
     debug!("Executing: ping -c 1 -W {} {}", timeout_secs as u32, host);
 
     let result = Command::new("ping")
-        .args([
-            "-c", "1",
-            "-W", &(timeout_secs as u32).to_string(),
-            host,
-        ])
+        .args(["-c", "1", "-W", &(timeout_secs as u32).to_string(), host])
         .stdout(Stdio::null())
         .stderr(Stdio::null())
         .status();

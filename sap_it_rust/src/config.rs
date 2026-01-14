@@ -81,14 +81,16 @@ impl Server {
 
     /// Get the SSH connection string if available.
     pub fn ssh_string(&self) -> Option<&str> {
-        self.ssh.as_ref().filter(|s| !s.is_empty()).map(|s| s.as_str())
+        self.ssh
+            .as_ref()
+            .filter(|s| !s.is_empty())
+            .map(|s| s.as_str())
     }
 
     /// Extract the IP address from the SSH connection string.
     pub fn ssh_ip(&self) -> Option<String> {
-        self.ssh_string().and_then(|ssh| {
-            ssh.split('@').nth(1).map(|s| s.to_string())
-        })
+        self.ssh_string()
+            .and_then(|ssh| ssh.split('@').nth(1).map(|s| s.to_string()))
     }
 }
 
@@ -162,7 +164,8 @@ impl Config {
     /// Generate a sample configuration file content.
     pub fn sample_toml() -> String {
         let config = Self::default_config();
-        toml::to_string_pretty(&config).unwrap_or_else(|_| String::from("# Failed to generate sample"))
+        toml::to_string_pretty(&config)
+            .unwrap_or_else(|_| String::from("# Failed to generate sample"))
     }
 }
 

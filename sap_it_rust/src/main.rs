@@ -165,10 +165,7 @@ fn init_config(output: &PathBuf) -> Result<()> {
     std::fs::write(output, &sample)
         .with_context(|| format!("Failed to write config file: {}", output.display()))?;
 
-    ui::success(&format!(
-        "Configuration file created: {}",
-        output.display()
-    ));
+    ui::success(&format!("Configuration file created: {}", output.display()));
     println!();
     println!("Edit this file to configure your servers, then run 'sap_it' to connect.");
 

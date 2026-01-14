@@ -28,7 +28,11 @@ impl ConnectionType {
 
     /// Get all available connection types.
     pub fn all() -> &'static [ConnectionType] {
-        &[ConnectionType::Rdp, ConnectionType::Ssh, ConnectionType::Both]
+        &[
+            ConnectionType::Rdp,
+            ConnectionType::Ssh,
+            ConnectionType::Both,
+        ]
     }
 }
 
@@ -120,7 +124,10 @@ impl ConnectionManager {
                 return false;
             }
 
-            debug!("Ping attempt {} of {} for {}", attempt, self.settings.ping_retries, host);
+            debug!(
+                "Ping attempt {} of {} for {}",
+                attempt, self.settings.ping_retries, host
+            );
 
             if platform::ping_host(host, self.settings.ping_timeout_ms) {
                 info!("Host {} is reachable", host);
@@ -135,7 +142,10 @@ impl ConnectionManager {
             }
         }
 
-        warn!("Host {} is not reachable after {} attempts", host, self.settings.ping_retries);
+        warn!(
+            "Host {} is not reachable after {} attempts",
+            host, self.settings.ping_retries
+        );
         false
     }
 
@@ -146,13 +156,15 @@ impl ConnectionManager {
         }
 
         if !self.check_host_reachable(&self.server.rdp) {
-            warn!("RDP host {} not reachable, skipping RDP session", self.server.rdp);
+            warn!(
+                "RDP host {} not reachable, skipping RDP session",
+                self.server.rdp
+            );
             return Ok(None);
         }
 
         info!("Starting RDP session to {}...", self.server.rdp);
-        let child = platform::start_rdp(&self.server.rdp)
-            .context("Failed to start RDP session")?;
+        let child = platform::start_rdp(&self.server.rdp).context("Failed to start RDP session")?;
 
         Ok(Some(child))
     }
@@ -163,10 +175,14 @@ impl ConnectionManager {
             return Ok(());
         }
 
-        let ssh_string = self.server.ssh_string()
+        let ssh_string = self
+            .server
+            .ssh_string()
             .context("SSH not available for this server")?;
 
-        let ssh_ip = self.server.ssh_ip()
+        let ssh_ip = self
+            .server
+            .ssh_ip()
             .context("Could not extract IP from SSH string")?;
 
         if !self.check_host_reachable(&ssh_ip) {
@@ -175,8 +191,7 @@ impl ConnectionManager {
         }
 
         info!("Starting SSH session to {}...", ssh_string);
-        platform::start_ssh(ssh_string)
-            .context("Failed to start SSH session")?;
+        platform::start_ssh(ssh_string).context("Failed to start SSH session")?;
 
         Ok(())
     }
