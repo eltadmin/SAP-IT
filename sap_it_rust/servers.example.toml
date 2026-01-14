@@ -1,0 +1,53 @@
+# SAP-IT Server Configuration
+# Copy this file to 'servers.toml' and customize for your environment.
+#
+# On Windows: Place in the same directory as the executable, or in
+#             %APPDATA%\sap_it\servers.toml
+# On Linux:   Place in the current directory, or in
+#             ~/.config/sap_it/servers.toml
+
+# Global settings (all optional)
+[settings]
+# Timeout in seconds for VPN connection attempts
+vpn_timeout_secs = 30
+
+# Timeout in milliseconds for ping checks
+ping_timeout_ms = 3000
+
+# Number of ping retries before giving up
+ping_retries = 3
+
+# Server definitions
+# Each server requires: name, rdp, vpn
+# Optional: ssh (if SSH access is available)
+
+[[servers]]
+name = "Ilmatex"
+ssh = "root@192.168.0.98"
+rdp = "192.168.0.99"
+vpn = "ILMATEX"
+
+[[servers]]
+name = "Frodexim"
+# No SSH available for this server
+rdp = "192.168.50.20"
+vpn = "FRODEXIM"
+
+[[servers]]
+name = "Industrial Technic"
+ssh = "root@192.168.100.10"
+rdp = "192.168.100.20"
+vpn = "Industrial Technik"
+
+[[servers]]
+name = "BG Nova"
+# Shares VPN with Industrial Technic
+rdp = "192.168.100.20"
+vpn = "Industrial Technik"
+
+# Add more servers as needed:
+# [[servers]]
+# name = "My Server"
+# ssh = "admin@192.168.1.100"  # Optional
+# rdp = "192.168.1.100"
+# vpn = "MY_VPN_NAME"
