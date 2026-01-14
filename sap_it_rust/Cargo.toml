@@ -1,0 +1,15 @@
+[package]
+name = "sap_it"
+version = "1.0.0"
+edition = "2021"
+authors = ["SAP-IT Team"]
+description = "Server connection manager for IT infrastructure"
+
+[dependencies]
+colored = "2"
+
+[profile.release]
+opt-level = "z"
+lto = true
+codegen-units = 1
+strip = true
