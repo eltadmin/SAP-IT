@@ -259,7 +259,7 @@ fn render_connecting(app: &App, frame: &mut Frame, area: Rect) {
 
     let elapsed = app
         .connection_duration()
-        .map(|d| App::format_duration(d))
+        .map(App::format_duration)
         .unwrap_or_else(|| "00:00".to_string());
 
     let lines = vec![
@@ -309,7 +309,7 @@ fn render_connected(app: &App, frame: &mut Frame, area: Rect) {
 
     let elapsed = app
         .connection_duration()
-        .map(|d| App::format_duration(d))
+        .map(App::format_duration)
         .unwrap_or_else(|| "00:00".to_string());
 
     let server = app.current_server();

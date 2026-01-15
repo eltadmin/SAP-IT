@@ -141,11 +141,8 @@ fn handle_connection_type(app: &mut super::app::App, key: KeyEvent) {
 }
 
 fn handle_connecting(app: &mut super::app::App, key: KeyEvent) {
-    match key.code {
-        KeyCode::Esc => {
-            app.disconnect();
-        }
-        _ => {}
+    if key.code == KeyCode::Esc {
+        app.disconnect();
     }
 }
 
