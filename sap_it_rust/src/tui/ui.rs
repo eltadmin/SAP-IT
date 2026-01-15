@@ -5,7 +5,7 @@ use crate::connection::ConnectionType;
 use ratatui::{
     layout::{Alignment, Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style, Stylize},
-    text::{Line, Span, Text},
+    text::{Line, Span},
     widgets::{
         Block, BorderType, Borders, Clear, List, ListItem, Padding, Paragraph, Row, Table, Wrap,
     },
@@ -365,16 +365,14 @@ fn render_connected(app: &App, frame: &mut Frame, area: Rect) {
 fn render_settings(app: &App, frame: &mut Frame, area: Rect) {
     let settings = &app.config.settings;
 
+    let vpn_timeout_str = format!("{} seconds", settings.vpn_timeout_secs);
+    let ping_timeout_str = format!("{} ms", settings.ping_timeout_ms);
+    let ping_retries_str = settings.ping_retries.to_string();
+
     let rows = vec![
-        Row::new(vec![
-            "VPN Timeout",
-            &format!("{} seconds", settings.vpn_timeout_secs),
-        ]),
-        Row::new(vec![
-            "Ping Timeout",
-            &format!("{} ms", settings.ping_timeout_ms),
-        ]),
-        Row::new(vec!["Ping Retries", &settings.ping_retries.to_string()]),
+        Row::new(vec!["VPN Timeout", vpn_timeout_str.as_str()]),
+        Row::new(vec!["Ping Timeout", ping_timeout_str.as_str()]),
+        Row::new(vec!["Ping Retries", ping_retries_str.as_str()]),
     ];
 
     let widths = [Constraint::Length(20), Constraint::Min(10)];
