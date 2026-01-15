@@ -31,7 +31,7 @@ fn test_cli_version() {
 
     let stdout = String::from_utf8_lossy(&output.stdout);
 
-    assert!(stdout.contains("2.0.0"));
+    assert!(stdout.contains("2.1.0"));
 }
 
 /// Test the init subcommand creates a config file.
