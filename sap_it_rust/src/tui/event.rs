@@ -5,6 +5,7 @@ use std::time::Duration;
 
 /// Application events.
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 pub enum Event {
     /// Terminal tick (for animations/updates).
     Tick,
@@ -255,17 +256,5 @@ fn handle_confirm(app: &mut super::app::App, key: KeyEvent) {
             app.confirm_selection();
         }
         _ => {}
-    }
-}
-
-impl super::app::App {
-    fn save_current_field(&mut self) {
-        match self.edit_field_index {
-            0 => self.edit_server_fields.name = self.input_buffer.clone(),
-            1 => self.edit_server_fields.rdp = self.input_buffer.clone(),
-            2 => self.edit_server_fields.ssh = self.input_buffer.clone(),
-            3 => self.edit_server_fields.vpn = self.input_buffer.clone(),
-            _ => {}
-        }
     }
 }

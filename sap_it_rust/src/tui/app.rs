@@ -1,9 +1,9 @@
 //! Application state for the TUI.
 
-use crate::config::{Config, Server, Settings};
+use crate::config::{Config, Server};
 use crate::connection::ConnectionType;
 use crate::platform;
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::AtomicBool;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
@@ -30,6 +30,7 @@ pub enum Screen {
 
 /// Connection status during the connection process.
 #[derive(Debug, Clone, PartialEq, Eq)]
+#[allow(dead_code)]
 pub enum ConnectionStatus {
     Idle,
     ConnectingVpn,
@@ -76,6 +77,7 @@ pub struct App {
     pub should_quit: bool,
 
     /// Shutdown flag for graceful termination.
+    #[allow(dead_code)]
     pub shutdown_flag: Arc<AtomicBool>,
 
     /// Currently connected server (if any).
@@ -451,13 +453,13 @@ impl App {
 
     /// Start editing selected server.
     pub fn edit_selected_server(&mut self) {
-        if let Some(server) = self.current_server() {
+        if let Some(server) = self.current_server().cloned() {
             self.edit_mode = true;
             self.edit_server_fields = EditServerFields {
-                name: server.name.clone(),
-                rdp: server.rdp.clone(),
-                ssh: server.ssh.clone().unwrap_or_default(),
-                vpn: server.vpn.clone(),
+                name: server.name,
+                rdp: server.rdp,
+                ssh: server.ssh.unwrap_or_default(),
+                vpn: server.vpn,
             };
             self.edit_field_index = 0;
             self.load_field_to_input();
@@ -487,7 +489,7 @@ impl App {
     }
 
     /// Save current input to field.
-    fn save_current_field(&mut self) {
+    pub fn save_current_field(&mut self) {
         match self.edit_field_index {
             0 => self.edit_server_fields.name = self.input_buffer.clone(),
             1 => self.edit_server_fields.rdp = self.input_buffer.clone(),
