@@ -90,26 +90,24 @@ fn run() -> Result<()> {
 
     // Handle subcommands
     match cli.command {
-        Some(Commands::Init { output }) => {
-            return init_config(&output);
-        }
+        Some(Commands::Init { output }) => init_config(&output),
         Some(Commands::List) => {
             let config = load_config(cli.config.as_ref(), true)?;
-            return list_servers(&config);
+            list_servers(&config)
         }
         Some(Commands::Connect {
             server,
             connection_type,
         }) => {
             let config = load_config(cli.config.as_ref(), true)?;
-            return direct_connect(&config, &server, &connection_type);
+            direct_connect(&config, &server, &connection_type)
         }
         None => {
             // Interactive mode
             if cli.simple {
-                return simple_interactive_mode(cli.config.as_ref());
+                simple_interactive_mode(cli.config.as_ref())
             } else {
-                return tui_mode(cli.config.as_ref());
+                tui_mode(cli.config.as_ref())
             }
         }
     }
